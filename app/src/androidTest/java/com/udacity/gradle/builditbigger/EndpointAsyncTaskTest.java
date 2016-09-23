@@ -1,20 +1,23 @@
 package com.udacity.gradle.builditbigger;
 
+import android.app.Application;
 import android.support.test.filters.MediumTest;
-import android.test.ActivityInstrumentationTestCase2;
+import android.test.ApplicationTestCase;
+
+import com.udacity.gradle.EndpointAsyncTask;
 
 import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by HoaNV on 9/22/16.
  */
-public class EndpointAsyncTaskTest extends ActivityInstrumentationTestCase2<MainActivity> {
+public class EndpointAsyncTaskTest extends ApplicationTestCase<Application> {
   CountDownLatch signal = null;
   Exception mError;
   String mResult;
 
   public EndpointAsyncTaskTest() {
-    super(MainActivity.class);
+    super(Application.class);
   }
 
   @Override
@@ -25,8 +28,8 @@ public class EndpointAsyncTaskTest extends ActivityInstrumentationTestCase2<Main
 
   @MediumTest
   public void testAsyncTaskTest() throws InterruptedException {
-    MainActivityFragment.EndpointAsyncTask task = new MainActivityFragment.EndpointAsyncTask();
-    task.setmListener(new MainActivityFragment.EndpointAsyncTask.EndpointAsyncTaskListener() {
+    EndpointAsyncTask task = new EndpointAsyncTask();
+    task.setmListener(new EndpointAsyncTask.EndpointAsyncTaskListener() {
       @Override
       public void onComplete(String result, Exception e) {
         signal.countDown();
@@ -34,7 +37,7 @@ public class EndpointAsyncTaskTest extends ActivityInstrumentationTestCase2<Main
         mResult = result;
       }
     });
-    task.execute(getActivity());
+    task.execute(getContext());
     signal.await();
 
     assertNull(mError);

@@ -1,8 +1,6 @@
 package com.udacity.gradle.builditbigger.paid;
 
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -10,15 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
-import com.google.api.client.googleapis.services.GoogleClientRequestInitializer;
+import com.udacity.gradle.EndpointAsyncTask;
 import com.udacity.gradle.builditbigger.R;
 import com.vagabond.ajokelib.AJokeActivity;
-import com.vagabond.buildappbigger.backend.myApi.MyApi;
-
-import java.io.IOException;
 
 
 /**
@@ -38,68 +30,19 @@ public class MainActivityFragment extends Fragment {
     jokeBtn.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        new EndpointAsyncTask().execute(getActivity());
+        EndpointAsyncTask task = new EndpointAsyncTask();
+        task.setmListener(new EndpointAsyncTask.EndpointAsyncTaskListener() {
+          @Override
+          public void onComplete(String result, Exception e) {
+            Intent intent = new Intent(getActivity(), AJokeActivity.class);
+            intent.putExtra(AJokeActivity.JOKE, result);
+            getActivity().startActivity(intent);
+          }
+        });
+        task.execute(getActivity());
       }
     });
 
     return root;
   }
-
-  public static  class EndpointAsyncTask extends AsyncTask<Context, Void, String> {
-    private static MyApi myApiService = null;
-
-    private EndpointAsyncTaskListener mListener = null;
-    private Exception mError;
-    private Context context;
-
-    @Override
-    protected String doInBackground(Context... params) {
-      if(myApiService == null) {  // Only do this once
-        MyApi.Builder builder = new MyApi.Builder(AndroidHttp.newCompatibleTransport(),
-          new AndroidJsonFactory(), null)
-          // options for running against local devappserver
-          // - 10.0.2.2 is localhost's IP address in Android emulator
-          // - turn off compression when running against local devappserver
-          .setRootUrl("http://10.0.2.2:8080/_ah/api/")
-          .setGoogleClientRequestInitializer(new GoogleClientRequestInitializer() {
-            @Override
-            public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest) throws IOException {
-              abstractGoogleClientRequest.setDisableGZipContent(true);
-            }
-          });
-        builder.setApplicationName("BuildAppBigger Server");
-        // end options for devappserver
-
-        myApiService = builder.build();
-      }
-
-      context = params[0];
-
-      try {
-        return myApiService.getJoke().execute().getData();
-      } catch (IOException e) {
-        mError = e;
-        return e.getMessage();
-      }
-    }
-
-    @Override
-    protected void onPostExecute(String s) {
-      if (mListener != null) {
-        mListener.onComplete(s, mError);
-      }
-      Intent intent = new Intent(context, AJokeActivity.class);
-      intent.putExtra(AJokeActivity.JOKE, s);
-      context.startActivity(intent);
-    }
-
-    public interface EndpointAsyncTaskListener {
-      void onComplete(String result, Exception e);
-    }
-
-    public void setmListener(EndpointAsyncTaskListener mListener) {
-      this.mListener = mListener;
-    }
-  }
-
 }
